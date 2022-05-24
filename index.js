@@ -13,9 +13,24 @@ app.use(express.json());
 
 
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4lnss.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+
+}
 
 async function run() {
     try {
@@ -46,7 +61,7 @@ async function run() {
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const updateProduct = req.body;
-            console.log(updateProduct);
+            // console.log(updateProduct);
             const query = { _id: ObjectId(id) }
             const options = { upsert: true };
             const updateDoc = {
@@ -60,13 +75,19 @@ async function run() {
         });
 
         // load all orders 
-        app.get('/order', async (req, res) => {
+        app.get('/order', verifyJWT, async (req, res) => {
             // const query = {};
             const email = req.query.email;
-            const query = { email: email };
-            // const cursor = orderCollection.find(query);
-            const orders = await orderCollection.find(query).toArray();
-            res.send(orders);
+            const decodedEmail = req.decoded.email;
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const orders = await orderCollection.find(query).toArray();
+                res.send(orders);
+            }
+            else {
+                return res.status(403).send({ message: 'Forbidden Access!' });
+            }
+
         });
 
         // for post orders 
@@ -83,6 +104,14 @@ async function run() {
             const result = await orderCollection.deleteOne(query);
             res.send(result);
         });
+
+        // get all users
+        app.get("/user", async (req, res) => {
+            const query = {};
+            const cursor = userCollection.find(query);
+            const users = await cursor.toArray();
+            res.send(users);
+        })
 
         // insert user/user information
         app.put("/user/:email", async (req, res) => {
