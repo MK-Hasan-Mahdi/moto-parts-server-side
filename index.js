@@ -22,7 +22,7 @@ async function run() {
         // console.log('database connected');
         const productCollection = client.db('motoParts').collection('product');
         const orderCollection = client.db('motoParts').collection('order');
-        // const productCollection = client.db('motoParts').collection('product');
+        const userCollection = client.db('motoParts').collection('user');
         // const productCollection = client.db('motoParts').collection('product');
 
         //    get all product
@@ -73,13 +73,26 @@ async function run() {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result);
-        })
+        });
 
         // delete order by per user/email
         app.delete("/order/:id", async (req, res) => {
             const orderId = req.params.id;
             const query = { _id: ObjectId(orderId) };
             const result = await orderCollection.deleteOne(query);
+            res.send(result);
+        });
+
+        // insert user/user information
+        app.put("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email }
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
 
