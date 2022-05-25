@@ -41,6 +41,18 @@ async function run() {
         const userCollection = client.db('motoParts').collection('user');
         // const productCollection = client.db('motoParts').collection('product');
 
+
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'Forbidden' });
+            }
+        }
+
         //    get all product
         app.get('/product', async (req, res) => {
             const query = {};
@@ -90,7 +102,7 @@ async function run() {
 
         });
 
-        // for post orders 
+        // for post/insert orders 
         app.post("/order", async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
@@ -125,6 +137,25 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30d' })
             res.send({ result, token });
+        });
+
+        // check is he admin
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin });
+        });
+
+        // admin can create/insert another admin
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email }
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         })
 
     }
