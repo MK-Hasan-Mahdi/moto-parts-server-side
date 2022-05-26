@@ -39,19 +39,20 @@ async function run() {
         const productCollection = client.db('motoParts').collection('product');
         const orderCollection = client.db('motoParts').collection('order');
         const userCollection = client.db('motoParts').collection('user');
+        const profileCollection = client.db('motoParts').collection('profile');
         // const productCollection = client.db('motoParts').collection('product');
 
 
-        const verifyAdmin = async (req, res, next) => {
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({ email: requester });
-            if (requesterAccount.role === 'admin') {
-                next();
-            }
-            else {
-                res.status(403).send({ message: 'Forbidden' });
-            }
-        }
+        // const verifyAdmin = async (req, res, next) => {
+        //     const requester = req.decoded.email;
+        //     const requesterAccount = await userCollection.findOne({ email: requester });
+        //     if (requesterAccount.role === 'admin') {
+        //         next();
+        //     }
+        //     else {
+        //         res.status(403).send({ message: 'Forbidden' });
+        //     }
+        // }
 
         //    get all product
         app.get('/product', async (req, res) => {
@@ -148,15 +149,46 @@ async function run() {
         });
 
         // admin can create/insert another admin
-        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            const filter = { email: email }
-            const updateDoc = {
-                $set: { role: 'admin' },
-            };
-            const result = await userCollection.updateOne(filter, updateDoc);
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                const filter = { email: email }
+                const updateDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            }
+            else {
+                res.status(403).send({ message: 'Forbidden' });
+            }
+        });
+
+
+        // // for post/insert profile 
+        app.post("/profile", async (req, res) => {
+            const order = req.body;
+            const result = await profileCollection.insertOne(order);
             res.send(result);
-        })
+        });
+
+        // // get profile
+        app.get("/profile", async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const cursor = profileCollection.find(query);
+            const profile = await cursor.toArray();
+            res.send(profile);
+        });
+
+        // post single product
+        app.post('/product', async (req, res) => {
+            const newItem = req.body;
+            const output = await productCollection.insertOne(newItem);
+            res.send(output);
+        });
 
     }
     finally {
