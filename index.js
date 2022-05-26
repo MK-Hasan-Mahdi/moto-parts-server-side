@@ -62,12 +62,27 @@ async function run() {
             res.send(products);
         });
 
+        // post single product
+        app.post('/product', async (req, res) => {
+            const newItem = req.body;
+            const output = await productCollection.insertOne(newItem);
+            res.send(output);
+        });
+
         // get single  product
         app.get('/product/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const product = await productCollection.findOne(query);
             res.send(product);
+        });
+
+        // delete product
+        app.delete('/product/:id', async (req, res) => {
+            const productId = req.params.id;
+            const query = { _id: ObjectId(productId) };
+            const output = await productCollection.deleteOne(query);
+            res.send(output)
         });
 
 
@@ -183,12 +198,7 @@ async function run() {
             res.send(profile);
         });
 
-        // post single product
-        app.post('/product', async (req, res) => {
-            const newItem = req.body;
-            const output = await productCollection.insertOne(newItem);
-            res.send(output);
-        });
+
 
     }
     finally {
