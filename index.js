@@ -40,8 +40,7 @@ async function run() {
         const orderCollection = client.db('motoParts').collection('order');
         const userCollection = client.db('motoParts').collection('user');
         const profileCollection = client.db('motoParts').collection('profile');
-        // const productCollection = client.db('motoParts').collection('product');
-
+        const reviewsCollection = client.db('motoParts').collection('reviews');
 
         // const verifyAdmin = async (req, res, next) => {
         //     const requester = req.decoded.email;
@@ -196,6 +195,19 @@ async function run() {
             const cursor = profileCollection.find(query);
             const profile = await cursor.toArray();
             res.send(profile);
+        });
+
+        //API to post a review 
+        app.post('/reviews', async (req, res) => {
+            const newReview = req.body;
+            const result = await reviewsCollection.insertOne(newReview);
+            res.send(result)
+        });
+
+        //API to get all reviews 
+        app.get("/reviews", async (req, res) => {
+            const reviews = await reviewsCollection.find({}).toArray();
+            res.send(reviews);
         });
 
 
