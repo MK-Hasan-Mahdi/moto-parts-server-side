@@ -138,6 +138,24 @@ async function run() {
             const cursor = userCollection.find(query);
             const users = await cursor.toArray();
             res.send(users);
+        });
+
+        //API to get user by user email
+        app.get('/user/:email', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.params.email;
+            // console.log("email", email);
+            if (email === decodedEmail) {
+                const query = { email: email }
+                const cursor = userCollection.find(query)
+                const items = await cursor.toArray()
+                res.send(items)
+            }
+            else {
+                // console.log(param);
+                return res.status(403).send({ message: 'forbidden access' })
+
+            }
         })
 
         // insert user/user information
@@ -197,18 +215,44 @@ async function run() {
             res.send(profile);
         });
 
-        //API to post a review 
-        app.post('/reviews', async (req, res) => {
-            const newReview = req.body;
-            const result = await reviewsCollection.insertOne(newReview);
-            res.send(result)
-        });
-
-        //API to get all reviews 
+        // get reviews
         app.get("/reviews", async (req, res) => {
-            const reviews = await reviewsCollection.find({}).toArray();
+            const query = {};
+            const cursor = reviewsCollection.find(query);
+            const reviews = await cursor.toArray();
             res.send(reviews);
         });
+
+        // review insert
+        app.post("/reviews", async (req, res) => {
+            const reviews = req.body;
+            const result = await reviewsCollection.insertOne(reviews);
+            res.send(result);
+        });
+
+        app.get("/users", async (req, res) => {
+            const query = {};
+            const user = await userCollection.find(query).toArray();
+            res.send(user);
+        });
+
+
+        // update profile
+        app.put("/update/:email", async (req, res) => {
+            const email = req.params.email;
+            const updatedData = req.body.updatedData;
+            const filter = await userCollection.findOne({ email: email });
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    updatedData,
+                },
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+
 
 
 
