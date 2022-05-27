@@ -117,6 +117,14 @@ async function run() {
 
         });
 
+        // get all users
+        app.get("/orders", async (req, res) => {
+            const query = {};
+            const cursor = orderCollection.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders);
+        });
+
         // for post/insert orders 
         app.post("/order", async (req, res) => {
             const order = req.body;
