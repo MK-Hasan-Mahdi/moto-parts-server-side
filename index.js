@@ -42,6 +42,7 @@ async function run() {
         const profileCollection = client.db('motoParts').collection('profile');
         const reviewsCollection = client.db('motoParts').collection('reviews');
 
+        // if need for verify admin
         // const verifyAdmin = async (req, res, next) => {
         //     const requester = req.decoded.email;
         //     const requesterAccount = await userCollection.findOne({ email: requester });
@@ -124,6 +125,15 @@ async function run() {
             const orders = await cursor.toArray();
             res.send(orders);
         });
+
+        // order get by id
+        app.get("/order/:id", verifyJWT, async (req, res) => {
+            const orderId = req.params.id;
+            const query = { _id: ObjectId(orderId) };
+            const result = await orderCollection.findOne(query);
+            res.send(result);
+        });
+
 
         // for post/insert orders 
         app.post("/order", async (req, res) => {
