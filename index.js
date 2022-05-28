@@ -5,6 +5,7 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 const app = express();
 const { MongoClient, ServerApiVersion, ObjectId, ObjectID } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
 // middleware
@@ -41,18 +42,19 @@ async function run() {
         const userCollection = client.db('motoParts').collection('user');
         const profileCollection = client.db('motoParts').collection('profile');
         const reviewsCollection = client.db('motoParts').collection('reviews');
+        const paymentCollection = client.db('motoParts').collection('payments');
 
         // if need for verify admin
-        // const verifyAdmin = async (req, res, next) => {
-        //     const requester = req.decoded.email;
-        //     const requesterAccount = await userCollection.findOne({ email: requester });
-        //     if (requesterAccount.role === 'admin') {
-        //         next();
-        //     }
-        //     else {
-        //         res.status(403).send({ message: 'Forbidden' });
-        //     }
-        // }
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'Forbidden' });
+            }
+        }
 
         //    get all product
         app.get('/product', async (req, res) => {
@@ -271,8 +273,35 @@ async function run() {
             res.send(result);
         });
 
+        // payment 
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const product = req.body;
+            const price = product.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
 
+        // create payment collection adn update ordercollection
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
 
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedDoc);
+        });
 
 
     }
