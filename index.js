@@ -84,7 +84,7 @@ async function run() {
             res.send(output)
         });
 
-
+        // single product update 
         app.put('/product/:id', async (req, res) => {
             const id = req.params.id;
             const updateProduct = req.body;
@@ -207,7 +207,7 @@ async function run() {
         });
 
 
-        // // for post/insert profile 
+        // for post/insert profile 
         app.post("/profile", async (req, res) => {
             const order = req.body;
             const result = await profileCollection.insertOne(order);
