@@ -160,6 +160,13 @@ async function run() {
             res.send(users);
         });
 
+        app.delete("/user/:id", async (req, res) => {
+            const userId = req.params.id;
+            const query = { _id: ObjectId(userId) };
+            const result = await userCollection.deleteOne(query);
+            res.send(result);
+        });
+
         //API to get user by user email
         app.get('/user/:email', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
@@ -201,22 +208,16 @@ async function run() {
         });
 
         // admin can create/insert another admin
-        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({ email: requester });
-            if (requesterAccount.role === 'admin') {
-                const filter = { email: email }
-                const updateDoc = {
-                    $set: { role: 'admin' },
-                };
-                const result = await userCollection.updateOne(filter, updateDoc);
-                res.send(result);
-            }
-            else {
-                res.status(403).send({ message: 'Forbidden' });
-            }
-        });
+            const filter = { email: email }
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        }
+        );
 
 
         // for post/insert profile 
