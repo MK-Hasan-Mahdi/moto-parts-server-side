@@ -273,7 +273,7 @@ async function run() {
             res.send(result);
         });
 
-        // payment 
+        // payment stripe
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const product = req.body;
             const price = product.price;
@@ -300,7 +300,7 @@ async function run() {
 
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
-            res.send(updatedDoc);
+            res.send(updatedOrder);
         });
 
 
