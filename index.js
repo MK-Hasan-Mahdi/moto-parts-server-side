@@ -314,7 +314,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Alhamdulillah');
+    res.send('Alhamdulillah, running motoparts server');
 })
 
 app.listen(port, () => {
